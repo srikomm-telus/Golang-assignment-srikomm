@@ -1,9 +1,8 @@
 package client
 
 import (
-	. "Golang-assignment-srikomm/constants"
-	. "Golang-assignment-srikomm/models"
-	. "Golang-assignment-srikomm/util"
+	"Golang-assignment-srikomm/constants"
+	"Golang-assignment-srikomm/models"
 	"encoding/json"
 	"errors"
 	"go.uber.org/zap"
@@ -14,22 +13,39 @@ type CryptonatorClient struct {
 	endpoint string
 }
 
-func (c CryptonatorClient) GetCurrentPrice() (Crypto, error) {
-	response, err := http.Get(CRYPTONATOR_ENDPOINT)
+func NewCryptonatorClient(endpoint string) *CryptonatorClient {
+	return &CryptonatorClient{
+		endpoint: endpoint,
+	}
+}
+
+func (c CryptonatorClient) GetCurrentPrice() (models.Crypto, error) {
+	response, err := http.Get(c.endpoint)
 
 	if err != nil {
-		logger.Error(CRYPTONATOR_FETCH_ERROR_MESSAGE, zap.String(ERROR_MESSAGE, err.Error()))
-		return Crypto{}, err
+		logger.Error("Error while fetching crypto price from Cryptonator", zap.String(constants.ERROR_MESSAGE, err.Error()))
+		return models.Crypto{}, err
+	}
+	if response.StatusCode != 200 {
+		logger.Error("unable to fetch response from CoinDesk API")
+		return models.Crypto{}, err
 	}
 
-	var cryptonatorResponse CryptonatorResponse
+	var cryptonatorResponse models.CryptonatorResponse
 
 	err = json.NewDecoder(response.Body).Decode(&cryptonatorResponse)
 
 	if err != nil {
-		logger.Error(ERROR_WHILE_DECODING_RESPONSE, zap.String(ERROR_MESSAGE, err.Error()))
-		return Crypto{}, errors.New(ERROR_WHILE_DECODING_RESPONSE)
+		logger.Error("Error while decoding response", zap.String(constants.ERROR_MESSAGE, err.Error()))
+		return models.Crypto{}, errors.New("error while decoding response")
 	}
 
-	return CryptonatorResponseToCryptoConverter(cryptonatorResponse), nil
+	return cryptonatorResponseToCryptoConverter(cryptonatorResponse), nil
+}
+
+func cryptonatorResponseToCryptoConverter(cyr models.CryptonatorResponse) models.Crypto {
+	price := map[string]string{
+		constants.USD_CURRENCY_IDENTIFIER: cyr.Ticker.Price,
+	}
+	return models.NewCrypto(constants.ETHEREUM_IDENTIFIER, price)
 }

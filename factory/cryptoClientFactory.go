@@ -8,10 +8,10 @@ import (
 func CryptoClientFactory(cryptoIdentifier string) client.CryptoClientInterface {
 	switch cryptoIdentifier {
 	case constants.BITCOIN_IDENTIFIER:
-		return client.CoinDeskClient{}
+		return client.NewCoinDeskClient(constants.COINDESK_ENDPOINT)
 	case constants.ETHEREUM_IDENTIFIER:
-		return client.CryptonatorClient{}
+		return client.NewCryptonatorClient(constants.CRYPTONATOR_ENDPOINT)
 	default:
-		return client.CoinDeskClient{}
+		return client.NewCoinDeskClient(constants.COINDESK_ENDPOINT)
 	}
 }
