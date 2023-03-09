@@ -33,8 +33,8 @@ func (cps *CryptoPriceServiceV2) GetCryptoPrice(cryptoName string, ctx context.C
 	} else {
 		logger.Info(err.Error())
 	}
-	if cps.downstreamClient == nil {
-		setDownstreamClient(cps, cryptoName)
+	if ctx.Value(constants.ENVIRONMENT) != constants.TEST {
+		cps.setDownstreamClient(cryptoName)
 	}
 	cryptoLivePrice, err := cps.cryptoPriceFromDownstream()
 	if err != nil {
@@ -69,7 +69,7 @@ func (cps *CryptoPriceServiceV2) updatePriceInCache(cpsr models.CryptoPriceServi
 	}
 }
 
-func setDownstreamClient(cps *CryptoPriceServiceV2, cryptoName string) {
+func (cps *CryptoPriceServiceV2) setDownstreamClient(cryptoName string) {
 	switch cryptoName {
 	case constants.BITCOIN_IDENTIFIER:
 		cps.downstreamClient = client.NewCoinDeskClient(constants.COINDESK_ENDPOINT)

@@ -11,8 +11,10 @@ const EUR_CURRENCY_IDENTIFIER = "EUR"
 const BITCOIN_IDENTIFIER = "BTC"
 const ETHEREUM_IDENTIFIER = "ETH"
 
+const ENVIRONMENT = "ENVIRONMENT"
 const PRODUCTION = "PRODUCTION"
 const DEVELOPMENT = "DEVELOPMENT"
+const TEST = "TEST"
 
 const COINDESK_ENDPOINT = "https://api.coindesk.com/v1/bpi/currentprice.json"
 const CRYPTONATOR_ENDPOINT = "https://api.cryptonator.com/api/ticker/eth-usd"

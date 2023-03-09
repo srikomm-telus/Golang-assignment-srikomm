@@ -22,8 +22,9 @@ func main() {
 		cpsv2            = NewCryptoPriceServiceV2(store.CryptoCacheStorage{CacheClient: redisClient})
 	)
 	if err != nil {
-		panic(err)
+		logger.Error(err.Error())
 	}
+	ctx = context.WithValue(ctx, constants.ENVIRONMENT, constants.PRODUCTION)
 	AddHttpTransport(routerGroup, *cps, *cpsv2, ctx)
 	err = router.Run("localhost:8080")
 	if err != nil {

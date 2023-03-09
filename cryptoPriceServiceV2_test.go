@@ -15,6 +15,7 @@ import (
 func TestCryptoPriceServiceV2_GetCryptoPrice(t *testing.T) {
 
 	ctx := context.Background()
+	ctx = context.WithValue(ctx, constants.ENVIRONMENT, constants.TEST)
 
 	t.Run("price is successfully fetched from cache", func(t *testing.T) {
 		mockCtrl := gomock.NewController(t)
