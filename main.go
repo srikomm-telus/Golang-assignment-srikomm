@@ -1,16 +1,31 @@
 package main
 
 import (
+	"Golang-assignment-srikomm/client"
+	"Golang-assignment-srikomm/constants"
+	"Golang-assignment-srikomm/store"
+	"context"
 	"fmt"
 	"github.com/gin-gonic/gin"
 )
 
 func main() {
 
-	router := gin.Default()
-	routerGroup := router.Group("/crypto")
-	AddHttpTransport(routerGroup)
-	err := router.Run("localhost:8080")
+	var (
+		router           = gin.Default()
+		routerGroup      = router.Group("/crypto")
+		ctx              = context.Background()
+		coinDeskClient   = client.NewCoinDeskClient(constants.COINDESK_ENDPOINT)
+		_                = client.NewCryptonatorClient(constants.CRYPTONATOR_ENDPOINT)
+		redisClient, err = store.NewRedisClient(ctx, constants.PRODUCTION)
+		cps              = NewCryptoPriceService(*coinDeskClient, store.CryptoCacheStorage{CacheClient: redisClient})
+		cpsv2            = NewCryptoPriceServiceV2(store.CryptoCacheStorage{CacheClient: redisClient})
+	)
+	if err != nil {
+		panic(err)
+	}
+	AddHttpTransport(routerGroup, *cps, *cpsv2)
+	err = router.Run("localhost:8080")
 	if err != nil {
 		fmt.Println("Failed to start service on localhost 8080 ", err)
 		return

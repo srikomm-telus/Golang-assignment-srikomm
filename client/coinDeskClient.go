@@ -7,16 +7,27 @@ import (
 	"errors"
 	"go.uber.org/zap"
 	"net/http"
+	"sync"
 )
+
+var lock = &sync.Mutex{}
+var coinDeskClient *CoinDeskClient
 
 type CoinDeskClient struct {
 	endPoint string
 }
 
 func NewCoinDeskClient(endpoint string) *CoinDeskClient {
-	return &CoinDeskClient{
-		endPoint: endpoint,
+	if coinDeskClient == nil {
+		lock.Lock()
+		defer lock.Unlock()
+		if coinDeskClient == nil {
+			coinDeskClient = &CoinDeskClient{
+				endPoint: endpoint,
+			}
+		}
 	}
+	return coinDeskClient
 }
 
 var logger, _ = zap.NewProduction()

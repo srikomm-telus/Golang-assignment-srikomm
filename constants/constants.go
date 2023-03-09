@@ -1,6 +1,6 @@
 package constants
 
-var EXPIRY_SECONDS float64 = 10
+const EXPIRY_SECONDS float64 = 10
 
 const US_CRYPTO_PRICE_CACHE_KEY = "crypto_price_USD"
 const EU_CRYPTO_PRICE_CACHE_KEY = "crypto_price_EUR"
@@ -11,10 +11,11 @@ const EUR_CURRENCY_IDENTIFIER = "EUR"
 const BITCOIN_IDENTIFIER = "BTC"
 const ETHEREUM_IDENTIFIER = "ETH"
 
-var COINDESK_ENDPOINT = "https://api.coindesk.com/v1/bpi/currentprice.json"
-var CRYPTONATOR_ENDPOINT = "https://api.cryptonator.com/api/ticker/eth-usd"
+const PRODUCTION = "PRODUCTION"
+const DEVELOPMENT = "DEVELOPMENT"
 
-var DEFAULT_CRYPTO = "BTC"
+const COINDESK_ENDPOINT = "https://api.coindesk.com/v1/bpi/currentprice.json"
+const CRYPTONATOR_ENDPOINT = "https://api.cryptonator.com/api/ticker/eth-usd"
 
 var ERROR_MESSAGE = "Error Message"
 

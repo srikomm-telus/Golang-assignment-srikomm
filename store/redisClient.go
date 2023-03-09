@@ -13,15 +13,16 @@ type RedisClient struct {
 	ctx    context.Context
 }
 
-func NewRedisClient(ctx context.Context) (*RedisClient, error) {
+func NewRedisClient(ctx context.Context, environment string) (*RedisClient, error) {
+	redisConfig := config.GetRedisConfig(environment)
 	newClient := redis.NewClient(
 		&redis.Options{
-			Addr:     config.GetRedisClientAddress(),
-			Password: config.GetRedisClientPassword(),
-			DB:       config.GetRedisDB(),
+			Addr:     redisConfig.ClientAddress,
+			Password: redisConfig.Password,
+			DB:       redisConfig.DB,
 		})
 
-	_, err := newClient.Ping(newClient.Context()).Result()
+	_, err := newClient.Ping(ctx).Result()
 
 	if err != nil {
 		logger.Error(err.Error())
@@ -35,7 +36,6 @@ func NewRedisClient(ctx context.Context) (*RedisClient, error) {
 }
 
 func (rdb *RedisClient) GetValue(key string) (string, error) {
-	defer rdb.client.Close()
 	value, err := rdb.client.Get(rdb.ctx, key).Result()
 	if err != nil {
 		return "", err
@@ -44,7 +44,6 @@ func (rdb *RedisClient) GetValue(key string) (string, error) {
 }
 
 func (rdb *RedisClient) SetValue(key string, val interface{}, expiry time.Duration) error {
-	defer rdb.client.Close()
 	_, err := rdb.client.Set(rdb.ctx, key, val, expiry).Result()
 	if err == redis.Nil {
 		fmt.Println(key + " does not exist")

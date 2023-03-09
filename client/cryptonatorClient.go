@@ -9,14 +9,23 @@ import (
 	"net/http"
 )
 
+var cryptonatorClient *CryptonatorClient
+
 type CryptonatorClient struct {
 	endpoint string
 }
 
 func NewCryptonatorClient(endpoint string) *CryptonatorClient {
-	return &CryptonatorClient{
-		endpoint: endpoint,
+	if cryptonatorClient == nil {
+		lock.Lock()
+		defer lock.Unlock()
+		if cryptonatorClient == nil {
+			cryptonatorClient = &CryptonatorClient{
+				endpoint: endpoint,
+			}
+		}
 	}
+	return cryptonatorClient
 }
 
 func (c CryptonatorClient) GetCurrentPrice() (models.Crypto, error) {

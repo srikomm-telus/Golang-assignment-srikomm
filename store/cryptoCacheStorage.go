@@ -9,28 +9,25 @@ import (
 )
 
 type CryptoCacheStorage struct {
-	storage *RedisClient
+	CacheClient CacheClientInterface
 }
 
 var logger, _ = zap.NewProduction()
 
-func NewCryptoCacheStorage(client *RedisClient) CryptoCacheStorage {
+func NewCryptoCacheStorage(client CacheClientInterface) CryptoCacheStorage {
 	return CryptoCacheStorage{
-		storage: client,
+		CacheClient: client,
 	}
 }
 
 func (c CryptoCacheStorage) SetCryptoPrice(crypto models.Crypto) (bool, error) {
-
-	err := c.storage.SetValue(constants.US_CRYPTO_PRICE_CACHE_KEY+crypto.GetCryptoName(), crypto.GetPriceInCurrency(constants.USD_CURRENCY_IDENTIFIER),
-		time.Duration(constants.EXPIRY_SECONDS)*time.Second)
+	err := c.CacheClient.SetValue(constants.US_CRYPTO_PRICE_CACHE_KEY+crypto.GetCryptoName(), crypto.GetPriceInCurrency(constants.USD_CURRENCY_IDENTIFIER), time.Duration(constants.EXPIRY_SECONDS)*time.Second)
 	if err != nil {
 		logger.Error(err.Error(), zap.String("crypto", crypto.GetCryptoName()))
 		return false, errors.New("unable to set crypto price in cache")
 	}
 	logger.Info(constants.SET_CACHE_VALUE, zap.String(constants.US_CRYPTO_PRICE_CACHE_KEY+crypto.GetCryptoName(), crypto.GetPriceInCurrency(constants.USD_CURRENCY_IDENTIFIER)))
-	err = c.storage.SetValue(constants.EU_CRYPTO_PRICE_CACHE_KEY+crypto.GetCryptoName(), crypto.GetPriceInCurrency(constants.EUR_CURRENCY_IDENTIFIER),
-		time.Duration(constants.EXPIRY_SECONDS)*time.Second)
+	err = c.CacheClient.SetValue(constants.EU_CRYPTO_PRICE_CACHE_KEY+crypto.GetCryptoName(), crypto.GetPriceInCurrency(constants.EUR_CURRENCY_IDENTIFIER), time.Duration(constants.EXPIRY_SECONDS)*time.Second)
 	if err != nil {
 		logger.Error(err.Error(), zap.String("crypto", crypto.GetCryptoName()))
 		return false, errors.New("unable to set crypto price in cache")
@@ -41,12 +38,12 @@ func (c CryptoCacheStorage) SetCryptoPrice(crypto models.Crypto) (bool, error) {
 }
 
 func (c CryptoCacheStorage) GetCryptoPrice(cryptoName string) (models.Crypto, error) {
-	usdRate, err := c.storage.GetValue(constants.US_CRYPTO_PRICE_CACHE_KEY + cryptoName)
+	usdRate, err := c.CacheClient.GetValue(constants.US_CRYPTO_PRICE_CACHE_KEY + cryptoName)
 	if err != nil {
 		logger.Error(err.Error())
 		return models.Crypto{}, errors.New("unable to fetch from cache")
 	}
-	eurRate, err := c.storage.GetValue(constants.EU_CRYPTO_PRICE_CACHE_KEY + cryptoName)
+	eurRate, err := c.CacheClient.GetValue(constants.EU_CRYPTO_PRICE_CACHE_KEY + cryptoName)
 	if err != nil {
 		logger.Error(err.Error())
 		return models.Crypto{}, errors.New("unable to fetch from cache")
@@ -60,5 +57,4 @@ func (c CryptoCacheStorage) GetCryptoPrice(cryptoName string) (models.Crypto, er
 		constants.USD_CURRENCY_IDENTIFIER: usdRate,
 		constants.EUR_CURRENCY_IDENTIFIER: eurRate,
 	}), nil
-
 }
