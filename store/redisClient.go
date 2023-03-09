@@ -10,7 +10,6 @@ import (
 
 type RedisClient struct {
 	client *redis.Client
-	ctx    context.Context
 }
 
 func NewRedisClient(ctx context.Context, environment string) (*RedisClient, error) {
@@ -31,20 +30,19 @@ func NewRedisClient(ctx context.Context, environment string) (*RedisClient, erro
 
 	return &RedisClient{
 		client: newClient,
-		ctx:    ctx,
 	}, nil
 }
 
-func (rdb *RedisClient) GetValue(key string) (string, error) {
-	value, err := rdb.client.Get(rdb.ctx, key).Result()
+func (rdb *RedisClient) GetValue(key string, ctx context.Context) (string, error) {
+	value, err := rdb.client.Get(ctx, key).Result()
 	if err != nil {
 		return "", err
 	}
 	return value, nil
 }
 
-func (rdb *RedisClient) SetValue(key string, val interface{}, expiry time.Duration) error {
-	_, err := rdb.client.Set(rdb.ctx, key, val, expiry).Result()
+func (rdb *RedisClient) SetValue(key string, ctx context.Context, val interface{}, expiry time.Duration) error {
+	_, err := rdb.client.Set(ctx, key, val, expiry).Result()
 	if err == redis.Nil {
 		fmt.Println(key + " does not exist")
 	} else if err != nil {

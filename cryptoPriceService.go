@@ -5,6 +5,7 @@ import (
 	"Golang-assignment-srikomm/constants"
 	"Golang-assignment-srikomm/models"
 	"Golang-assignment-srikomm/store"
+	"context"
 )
 
 type CryptoPriceService struct {
@@ -19,8 +20,8 @@ func NewCryptoPriceService(downstreamClient client.CryptoClientInterface, storag
 	}
 }
 
-func (cps *CryptoPriceService) GetCryptoPrice(cryptoName string) (*models.CryptoPriceServiceResponse, error) {
-	storedCryptoPrice, err := cps.cryptoPriceFromCache(cryptoName)
+func (cps *CryptoPriceService) GetCryptoPrice(cryptoName string, ctx context.Context) (*models.CryptoPriceServiceResponse, error) {
+	storedCryptoPrice, err := cps.cryptoPriceFromCache(cryptoName, ctx)
 	if err == nil {
 		return storedCryptoPrice, err
 	} else {
@@ -30,7 +31,7 @@ func (cps *CryptoPriceService) GetCryptoPrice(cryptoName string) (*models.Crypto
 	if err != nil {
 		return nil, err
 	}
-	cps.updatePriceInCache(*cryptoLivePrice)
+	cps.updatePriceInCache(*cryptoLivePrice, ctx)
 	return cryptoLivePrice, nil
 }
 
@@ -43,16 +44,16 @@ func (cps *CryptoPriceService) cryptoPriceFromDownstream() (*models.CryptoPriceS
 	return &cryptoPriceConverted, nil
 }
 
-func (cps *CryptoPriceService) cryptoPriceFromCache(cryptoName string) (*models.CryptoPriceServiceResponse, error) {
-	crypto, err := cps.storageClient.GetCryptoPrice(cryptoName)
+func (cps *CryptoPriceService) cryptoPriceFromCache(cryptoName string, ctx context.Context) (*models.CryptoPriceServiceResponse, error) {
+	crypto, err := cps.storageClient.GetCryptoPrice(cryptoName, ctx)
 	if err != nil {
 		return nil, err
 	}
 	return newCryptoPriceServiceResponse(crypto), nil
 }
 
-func (cps *CryptoPriceService) updatePriceInCache(cpsr models.CryptoPriceServiceResponse) {
-	_, err := cps.storageClient.SetCryptoPrice(cryptoFromCryptoPriceServiceResponse(cpsr))
+func (cps *CryptoPriceService) updatePriceInCache(cpsr models.CryptoPriceServiceResponse, ctx context.Context) {
+	_, err := cps.storageClient.SetCryptoPrice(cryptoFromCryptoPriceServiceResponse(cpsr), ctx)
 	if err != nil {
 		logger.Error(err.Error())
 		return

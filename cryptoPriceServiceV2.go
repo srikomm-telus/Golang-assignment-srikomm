@@ -5,6 +5,7 @@ import (
 	"Golang-assignment-srikomm/constants"
 	"Golang-assignment-srikomm/models"
 	"Golang-assignment-srikomm/store"
+	"context"
 )
 
 type CryptoPriceServiceV2 struct {
@@ -25,8 +26,8 @@ func NewCryptoPriceServiceV2ForTest(downstreamClient client.CryptoClientInterfac
 	}
 }
 
-func (cps *CryptoPriceServiceV2) GetCryptoPrice(cryptoName string) (*models.CryptoPriceServiceResponse, error) {
-	storedCryptoPrice, err := cps.cryptoPriceFromCache(cryptoName)
+func (cps *CryptoPriceServiceV2) GetCryptoPrice(cryptoName string, ctx context.Context) (*models.CryptoPriceServiceResponse, error) {
+	storedCryptoPrice, err := cps.cryptoPriceFromCache(cryptoName, ctx)
 	if err == nil {
 		return storedCryptoPrice, err
 	} else {
@@ -39,7 +40,7 @@ func (cps *CryptoPriceServiceV2) GetCryptoPrice(cryptoName string) (*models.Cryp
 	if err != nil {
 		return nil, err
 	}
-	cps.updatePriceInCache(*cryptoLivePrice)
+	cps.updatePriceInCache(*cryptoLivePrice, ctx)
 	return cryptoLivePrice, nil
 }
 
@@ -52,16 +53,16 @@ func (cps *CryptoPriceServiceV2) cryptoPriceFromDownstream() (*models.CryptoPric
 	return &cryptoPriceConverted, nil
 }
 
-func (cps *CryptoPriceServiceV2) cryptoPriceFromCache(cryptoName string) (*models.CryptoPriceServiceResponse, error) {
-	crypto, err := cps.storageClient.GetCryptoPrice(cryptoName)
+func (cps *CryptoPriceServiceV2) cryptoPriceFromCache(cryptoName string, ctx context.Context) (*models.CryptoPriceServiceResponse, error) {
+	crypto, err := cps.storageClient.GetCryptoPrice(cryptoName, ctx)
 	if err != nil {
 		return nil, err
 	}
 	return newCryptoPriceServiceResponse(crypto), nil
 }
 
-func (cps *CryptoPriceServiceV2) updatePriceInCache(cpsr models.CryptoPriceServiceResponse) {
-	_, err := cps.storageClient.SetCryptoPrice(cryptoFromCryptoPriceServiceResponse(cpsr))
+func (cps *CryptoPriceServiceV2) updatePriceInCache(cpsr models.CryptoPriceServiceResponse, ctx context.Context) {
+	_, err := cps.storageClient.SetCryptoPrice(cryptoFromCryptoPriceServiceResponse(cpsr), ctx)
 	if err != nil {
 		logger.Error(err.Error())
 		return

@@ -5,10 +5,11 @@
 package mock_store
 
 import (
-"Golang-assignment-srikomm/models"
-"reflect"
+	models "Golang-assignment-srikomm/models"
+	context "context"
+	reflect "reflect"
 
-"github.com/golang/mock/gomock"
+	gomock "github.com/golang/mock/gomock"
 )
 
 // MockCryptoStorageInterface is a mock of CryptoStorageInterface interface.
@@ -35,32 +36,31 @@ func (m *MockCryptoStorageInterface) EXPECT() *MockCryptoStorageInterfaceMockRec
 }
 
 // GetCryptoPrice mocks base method.
-func (m *MockCryptoStorageInterface) GetCryptoPrice(cryptoIdentifier string) (models.Crypto, error) {
+func (m *MockCryptoStorageInterface) GetCryptoPrice(cryptoIdentifier string, ctx context.Context) (models.Crypto, error) {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "GetCryptoPrice", cryptoIdentifier)
+	ret := m.ctrl.Call(m, "GetCryptoPrice", cryptoIdentifier, ctx)
 	ret0, _ := ret[0].(models.Crypto)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }
 
 // GetCryptoPrice indicates an expected call of GetCryptoPrice.
-func (mr *MockCryptoStorageInterfaceMockRecorder) GetCryptoPrice(cryptoIdentifier interface{}) *gomock.Call {
+func (mr *MockCryptoStorageInterfaceMockRecorder) GetCryptoPrice(cryptoIdentifier, ctx interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetCryptoPrice", reflect.TypeOf((*MockCryptoStorageInterface)(nil).GetCryptoPrice), cryptoIdentifier)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetCryptoPrice", reflect.TypeOf((*MockCryptoStorageInterface)(nil).GetCryptoPrice), cryptoIdentifier, ctx)
 }
 
 // SetCryptoPrice mocks base method.
-func (m *MockCryptoStorageInterface) SetCryptoPrice(crypto models.Crypto) (bool, error) {
+func (m *MockCryptoStorageInterface) SetCryptoPrice(crypto models.Crypto, ctx context.Context) (bool, error) {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "SetCryptoPrice", crypto)
+	ret := m.ctrl.Call(m, "SetCryptoPrice", crypto, ctx)
 	ret0, _ := ret[0].(bool)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }
 
 // SetCryptoPrice indicates an expected call of SetCryptoPrice.
-func (mr *MockCryptoStorageInterfaceMockRecorder) SetCryptoPrice(crypto interface{}) *gomock.Call {
+func (mr *MockCryptoStorageInterfaceMockRecorder) SetCryptoPrice(crypto, ctx interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "SetCryptoPrice", reflect.TypeOf((*MockCryptoStorageInterface)(nil).SetCryptoPrice), crypto)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "SetCryptoPrice", reflect.TypeOf((*MockCryptoStorageInterface)(nil).SetCryptoPrice), crypto, ctx)
 }
-

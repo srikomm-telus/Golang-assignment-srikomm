@@ -3,6 +3,7 @@ package store
 import (
 	"Golang-assignment-srikomm/constants"
 	"Golang-assignment-srikomm/models"
+	"context"
 	"errors"
 	"go.uber.org/zap"
 	"time"
@@ -20,14 +21,14 @@ func NewCryptoCacheStorage(client CacheClientInterface) CryptoCacheStorage {
 	}
 }
 
-func (c CryptoCacheStorage) SetCryptoPrice(crypto models.Crypto) (bool, error) {
-	err := c.CacheClient.SetValue(constants.US_CRYPTO_PRICE_CACHE_KEY+crypto.GetCryptoName(), crypto.GetPriceInCurrency(constants.USD_CURRENCY_IDENTIFIER), time.Duration(constants.EXPIRY_SECONDS)*time.Second)
+func (c CryptoCacheStorage) SetCryptoPrice(crypto models.Crypto, ctx context.Context) (bool, error) {
+	err := c.CacheClient.SetValue(constants.US_CRYPTO_PRICE_CACHE_KEY+crypto.GetCryptoName(), ctx, crypto.GetPriceInCurrency(constants.USD_CURRENCY_IDENTIFIER), time.Duration(constants.EXPIRY_SECONDS)*time.Second)
 	if err != nil {
 		logger.Error(err.Error(), zap.String("crypto", crypto.GetCryptoName()))
 		return false, errors.New("unable to set crypto price in cache")
 	}
 	logger.Info(constants.SET_CACHE_VALUE, zap.String(constants.US_CRYPTO_PRICE_CACHE_KEY+crypto.GetCryptoName(), crypto.GetPriceInCurrency(constants.USD_CURRENCY_IDENTIFIER)))
-	err = c.CacheClient.SetValue(constants.EU_CRYPTO_PRICE_CACHE_KEY+crypto.GetCryptoName(), crypto.GetPriceInCurrency(constants.EUR_CURRENCY_IDENTIFIER), time.Duration(constants.EXPIRY_SECONDS)*time.Second)
+	err = c.CacheClient.SetValue(constants.EU_CRYPTO_PRICE_CACHE_KEY+crypto.GetCryptoName(), ctx, crypto.GetPriceInCurrency(constants.EUR_CURRENCY_IDENTIFIER), time.Duration(constants.EXPIRY_SECONDS)*time.Second)
 	if err != nil {
 		logger.Error(err.Error(), zap.String("crypto", crypto.GetCryptoName()))
 		return false, errors.New("unable to set crypto price in cache")
@@ -37,13 +38,13 @@ func (c CryptoCacheStorage) SetCryptoPrice(crypto models.Crypto) (bool, error) {
 	return true, nil
 }
 
-func (c CryptoCacheStorage) GetCryptoPrice(cryptoName string) (models.Crypto, error) {
-	usdRate, err := c.CacheClient.GetValue(constants.US_CRYPTO_PRICE_CACHE_KEY + cryptoName)
+func (c CryptoCacheStorage) GetCryptoPrice(cryptoName string, ctx context.Context) (models.Crypto, error) {
+	usdRate, err := c.CacheClient.GetValue(constants.US_CRYPTO_PRICE_CACHE_KEY+cryptoName, ctx)
 	if err != nil {
 		logger.Error(err.Error())
 		return models.Crypto{}, errors.New("unable to fetch from cache")
 	}
-	eurRate, err := c.CacheClient.GetValue(constants.EU_CRYPTO_PRICE_CACHE_KEY + cryptoName)
+	eurRate, err := c.CacheClient.GetValue(constants.EU_CRYPTO_PRICE_CACHE_KEY+cryptoName, ctx)
 	if err != nil {
 		logger.Error(err.Error())
 		return models.Crypto{}, errors.New("unable to fetch from cache")

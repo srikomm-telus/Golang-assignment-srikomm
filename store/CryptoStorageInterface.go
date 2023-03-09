@@ -1,8 +1,11 @@
 package store
 
-import "Golang-assignment-srikomm/models"
+import (
+	"Golang-assignment-srikomm/models"
+	"context"
+)
 
 type CryptoStorageInterface interface {
-	SetCryptoPrice(crypto models.Crypto) (bool, error)
-	GetCryptoPrice(cryptoIdentifier string) (models.Crypto, error)
+	SetCryptoPrice(crypto models.Crypto, ctx context.Context) (bool, error)
+	GetCryptoPrice(cryptoIdentifier string, ctx context.Context) (models.Crypto, error)
 }

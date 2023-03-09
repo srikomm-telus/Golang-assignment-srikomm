@@ -1,8 +1,11 @@
 package store
 
-import "time"
+import (
+	"context"
+	"time"
+)
 
 type CacheClientInterface interface {
-	GetValue(key string) (string, error)
-	SetValue(key string, val interface{}, expiry time.Duration) error
+	GetValue(key string, ctx context.Context) (string, error)
+	SetValue(key string, ctx context.Context, val interface{}, expiry time.Duration) error
 }
