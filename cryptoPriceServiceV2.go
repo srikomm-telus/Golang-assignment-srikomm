@@ -18,13 +18,22 @@ func NewCryptoPriceServiceV2(storageClient store.CryptoStorageInterface) *Crypto
 	}
 }
 
+func NewCryptoPriceServiceV2ForTest(downstreamClient client.CryptoClientInterface, storageClient store.CryptoStorageInterface) *CryptoPriceServiceV2 {
+	return &CryptoPriceServiceV2{
+		downstreamClient: downstreamClient,
+		storageClient:    storageClient,
+	}
+}
+
 func (cps *CryptoPriceServiceV2) GetCryptoPrice(cryptoName string) (*models.CryptoPriceServiceResponse, error) {
-	setDownstreamClient(cps, cryptoName)
 	storedCryptoPrice, err := cps.cryptoPriceFromCache(cryptoName)
 	if err == nil {
 		return storedCryptoPrice, err
 	} else {
 		logger.Info(err.Error())
+	}
+	if cps.downstreamClient == nil {
+		setDownstreamClient(cps, cryptoName)
 	}
 	cryptoLivePrice, err := cps.cryptoPriceFromDownstream()
 	if err != nil {
@@ -67,29 +76,3 @@ func setDownstreamClient(cps *CryptoPriceServiceV2, cryptoName string) {
 		cps.downstreamClient = client.NewCryptonatorClient(constants.CRYPTONATOR_ENDPOINT)
 	}
 }
-
-//func newCryptoPriceServiceResponse(crypto models.Crypto) *models.CryptoPriceServiceResponse {
-//	return &models.CryptoPriceServiceResponse{
-//		Data: map[string]string{
-//			constants.USD_CURRENCY_IDENTIFIER: crypto.GetPriceInCurrency(constants.USD_CURRENCY_IDENTIFIER),
-//			constants.EUR_CURRENCY_IDENTIFIER: crypto.GetPriceInCurrency(constants.EUR_CURRENCY_IDENTIFIER),
-//		},
-//		IsFromCache: true,
-//		CryptoName:  crypto.GetCryptoName(),
-//	}
-//}
-//
-//func cryptoFromCryptoPriceServiceResponse(response models.CryptoPriceServiceResponse) models.Crypto {
-//	return models.NewCrypto(response.CryptoName, response.Data)
-//}
-//
-//func cryptoPriceToAPIResponse(c models.Crypto) models.CryptoPriceServiceResponse {
-//	return models.CryptoPriceServiceResponse{
-//		Data: map[string]string{
-//			constants.USD_CURRENCY_IDENTIFIER: c.GetPriceInCurrency(constants.USD_CURRENCY_IDENTIFIER),
-//			constants.EUR_CURRENCY_IDENTIFIER: c.GetPriceInCurrency(constants.EUR_CURRENCY_IDENTIFIER),
-//		},
-//		IsFromCache: false,
-//		CryptoName:  c.GetCryptoName(),
-//	}
-//}

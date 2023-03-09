@@ -11,12 +11,12 @@ import (
 	"testing"
 )
 
-func TestCryptoPriceService_GetCryptoPrice(t *testing.T) {
+func TestCryptoPriceServiceV2_GetCryptoPrice(t *testing.T) {
 	t.Run("price is successfully fetched from cache", func(t *testing.T) {
 		mockCtrl := gomock.NewController(t)
 		mockCryptoStorageInterface := mockstore.NewMockCryptoStorageInterface(mockCtrl)
 		mockCryptoClientInterface := mockclient.NewMockCryptoClientInterface(mockCtrl)
-		mockCryptoPriceService := NewCryptoPriceService(mockCryptoClientInterface, mockCryptoStorageInterface)
+		mockCryptoPriceService := NewCryptoPriceServiceV2ForTest(mockCryptoClientInterface, mockCryptoStorageInterface)
 		mockCryptoPrice := map[string]string{
 			"USD": "30",
 			"EUR": "40",
@@ -27,8 +27,8 @@ func TestCryptoPriceService_GetCryptoPrice(t *testing.T) {
 			CryptoName:  constants.BITCOIN_IDENTIFIER,
 			Data:        mockCryptoPrice,
 		}
-		mockCryptoStorageInterface.EXPECT().GetCryptoPrice(constants.BITCOIN_IDENTIFIER).Return(models.NewCrypto(
-			constants.BITCOIN_IDENTIFIER, mockCryptoPrice), nil)
+		mockCryptoStorageInterface.EXPECT().GetCryptoPrice(constants.BITCOIN_IDENTIFIER).Times(1).Return(
+			models.NewCrypto(constants.BITCOIN_IDENTIFIER, mockCryptoPrice), nil)
 		mockCryptoClientInterface.EXPECT().GetCurrentPrice().Times(0)
 		mockCryptoStorageInterface.EXPECT().SetCryptoPrice(gomock.Any()).Times(0)
 
@@ -37,11 +37,11 @@ func TestCryptoPriceService_GetCryptoPrice(t *testing.T) {
 		assert.Equal(t, nil, err)
 	})
 
-	t.Run("price is successfully fetched from downstream", func(t *testing.T) {
+	t.Run("price is successfully fetched from downstream client", func(t *testing.T) {
 		mockCtrl := gomock.NewController(t)
 		mockCryptoStorageInterface := mockstore.NewMockCryptoStorageInterface(mockCtrl)
 		mockCryptoClientInterface := mockclient.NewMockCryptoClientInterface(mockCtrl)
-		mockCryptoPriceService := NewCryptoPriceService(mockCryptoClientInterface, mockCryptoStorageInterface)
+		mockCryptoPriceService := NewCryptoPriceServiceV2ForTest(mockCryptoClientInterface, mockCryptoStorageInterface)
 		mockCryptoPrice := map[string]string{
 			"USD": "30",
 			"EUR": "40",
@@ -52,8 +52,8 @@ func TestCryptoPriceService_GetCryptoPrice(t *testing.T) {
 			CryptoName:  constants.BITCOIN_IDENTIFIER,
 			Data:        mockCryptoPrice,
 		}
-		mockCryptoStorageInterface.EXPECT().GetCryptoPrice(constants.BITCOIN_IDENTIFIER).Times(1).Return(models.Crypto{},
-			fmt.Errorf("intentional error"))
+		mockCryptoStorageInterface.EXPECT().GetCryptoPrice(constants.BITCOIN_IDENTIFIER).Times(1).Return(
+			models.Crypto{}, fmt.Errorf("intentional error"))
 		mockCryptoClientInterface.EXPECT().GetCurrentPrice().Times(1).Return(
 			models.NewCrypto(constants.BITCOIN_IDENTIFIER, mockCryptoPrice), nil)
 		mockCryptoStorageInterface.EXPECT().SetCryptoPrice(gomock.Any()).Times(1).Return(true, nil)
@@ -67,23 +67,23 @@ func TestCryptoPriceService_GetCryptoPrice(t *testing.T) {
 		mockCtrl := gomock.NewController(t)
 		mockCryptoStorageInterface := mockstore.NewMockCryptoStorageInterface(mockCtrl)
 		mockCryptoClientInterface := mockclient.NewMockCryptoClientInterface(mockCtrl)
-		mockCryptoPriceService := NewCryptoPriceService(mockCryptoClientInterface, mockCryptoStorageInterface)
-
-		mockCryptoStorageInterface.EXPECT().GetCryptoPrice(constants.BITCOIN_IDENTIFIER).Times(1).Return(models.Crypto{},
-			fmt.Errorf("intentional error"))
-		mockCryptoClientInterface.EXPECT().GetCurrentPrice().Times(1).Return(models.Crypto{}, fmt.Errorf("intentional error"))
+		mockCryptoPriceService := NewCryptoPriceServiceV2ForTest(mockCryptoClientInterface, mockCryptoStorageInterface)
+		mockCryptoStorageInterface.EXPECT().GetCryptoPrice(constants.BITCOIN_IDENTIFIER).Times(1).Return(
+			models.Crypto{}, fmt.Errorf("intentional error"))
+		mockCryptoClientInterface.EXPECT().GetCurrentPrice().Times(1).Return(
+			models.Crypto{}, fmt.Errorf("intentional error"))
 		mockCryptoStorageInterface.EXPECT().SetCryptoPrice(gomock.Any()).Times(0)
 
 		got, err := mockCryptoPriceService.GetCryptoPrice(constants.BITCOIN_IDENTIFIER)
 		assert.Equal(t, nil, got)
-		assert.Equal(t, err, fmt.Errorf("intentional error"))
+		assert.Equal(t, fmt.Errorf("intentional error"), err)
 	})
 
 	t.Run("price is not set in cache, downstream call succeeds but setting price in cache fails", func(t *testing.T) {
 		mockCtrl := gomock.NewController(t)
 		mockCryptoStorageInterface := mockstore.NewMockCryptoStorageInterface(mockCtrl)
 		mockCryptoClientInterface := mockclient.NewMockCryptoClientInterface(mockCtrl)
-		mockCryptoPriceService := NewCryptoPriceService(mockCryptoClientInterface, mockCryptoStorageInterface)
+		mockCryptoPriceService := NewCryptoPriceServiceV2ForTest(mockCryptoClientInterface, mockCryptoStorageInterface)
 		mockCryptoPrice := map[string]string{
 			"USD": "30",
 			"EUR": "40",
@@ -94,8 +94,8 @@ func TestCryptoPriceService_GetCryptoPrice(t *testing.T) {
 			CryptoName:  constants.BITCOIN_IDENTIFIER,
 			Data:        mockCryptoPrice,
 		}
-		mockCryptoStorageInterface.EXPECT().GetCryptoPrice(constants.BITCOIN_IDENTIFIER).Times(1).Return(models.Crypto{},
-			fmt.Errorf("intentional error"))
+		mockCryptoStorageInterface.EXPECT().GetCryptoPrice(constants.BITCOIN_IDENTIFIER).Times(1).Return(
+			models.Crypto{}, fmt.Errorf("intentional error"))
 		mockCryptoClientInterface.EXPECT().GetCurrentPrice().Times(1).Return(
 			models.NewCrypto(constants.BITCOIN_IDENTIFIER, mockCryptoPrice), nil)
 		mockCryptoStorageInterface.EXPECT().SetCryptoPrice(gomock.Any()).Times(1).Return(false,
