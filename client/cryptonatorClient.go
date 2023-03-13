@@ -52,6 +52,10 @@ func (c CryptonatorClient) GetCurrentPrice() (models.Crypto, error) {
 	return cryptonatorResponseToCryptoConverter(cryptonatorResponse), nil
 }
 
+func (c CryptonatorClient) GetETHCurrentPrice() (models.Crypto, error) {
+	return c.GetCurrentPrice()
+}
+
 func cryptonatorResponseToCryptoConverter(cyr models.CryptonatorResponse) models.Crypto {
 	price := map[string]string{
 		constants.USD_CURRENCY_IDENTIFIER: cyr.Ticker.Price,

@@ -36,31 +36,30 @@ func (m *MockCryptoStorageInterface) EXPECT() *MockCryptoStorageInterfaceMockRec
 }
 
 // GetCryptoPrice mocks base method.
-func (m *MockCryptoStorageInterface) GetCryptoPrice(cryptoIdentifier string, ctx context.Context) (models.Crypto, error) {
+func (m *MockCryptoStorageInterface) GetCryptoPrice(ctx context.Context, cryptoIdentifier string) (models.Crypto, error) {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "GetCryptoPrice", cryptoIdentifier, ctx)
+	ret := m.ctrl.Call(m, "GetCryptoPrice", ctx, cryptoIdentifier)
 	ret0, _ := ret[0].(models.Crypto)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }
 
 // GetCryptoPrice indicates an expected call of GetCryptoPrice.
-func (mr *MockCryptoStorageInterfaceMockRecorder) GetCryptoPrice(cryptoIdentifier, ctx interface{}) *gomock.Call {
+func (mr *MockCryptoStorageInterfaceMockRecorder) GetCryptoPrice(ctx, cryptoIdentifier interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetCryptoPrice", reflect.TypeOf((*MockCryptoStorageInterface)(nil).GetCryptoPrice), cryptoIdentifier, ctx)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetCryptoPrice", reflect.TypeOf((*MockCryptoStorageInterface)(nil).GetCryptoPrice), ctx, cryptoIdentifier)
 }
 
 // SetCryptoPrice mocks base method.
-func (m *MockCryptoStorageInterface) SetCryptoPrice(crypto models.Crypto, ctx context.Context) (bool, error) {
+func (m *MockCryptoStorageInterface) SetCryptoPrice(ctx context.Context, crypto models.Crypto) error {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "SetCryptoPrice", crypto, ctx)
-	ret0, _ := ret[0].(bool)
-	ret1, _ := ret[1].(error)
-	return ret0, ret1
+	ret := m.ctrl.Call(m, "SetCryptoPrice", ctx, crypto)
+	ret0, _ := ret[0].(error)
+	return ret0
 }
 
 // SetCryptoPrice indicates an expected call of SetCryptoPrice.
-func (mr *MockCryptoStorageInterfaceMockRecorder) SetCryptoPrice(crypto, ctx interface{}) *gomock.Call {
+func (mr *MockCryptoStorageInterfaceMockRecorder) SetCryptoPrice(ctx, crypto interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "SetCryptoPrice", reflect.TypeOf((*MockCryptoStorageInterface)(nil).SetCryptoPrice), crypto, ctx)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "SetCryptoPrice", reflect.TypeOf((*MockCryptoStorageInterface)(nil).SetCryptoPrice), ctx, crypto)
 }

@@ -56,8 +56,8 @@ func (c CoinDeskClient) GetCurrentPrice() (models.Crypto, error) {
 	return coinBaseResponseToCryptoConverter(coinBaseResponse), nil
 }
 
-func (c CoinDeskClient) SetEndpoint(endpoint string) {
-	c.endPoint = endpoint
+func (c CoinDeskClient) GetBTCCurrentPrice() (models.Crypto, error) {
+	return c.GetCurrentPrice()
 }
 
 func coinBaseResponseToCryptoConverter(cbr models.CoinBaseResponse) models.Crypto {

@@ -1,0 +1,8 @@
+{
+  "CONFIG": {
+    "Environment": "DEVELOPMENT",
+    "RedisClientAddress": "localhost:6379",
+    "RedisClientPassword": "",
+    "RedisDB": 0
+  }
+}

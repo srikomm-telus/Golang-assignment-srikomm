@@ -8,30 +8,32 @@ import (
 )
 
 type RedisConfig struct {
-	Production  RedisEnvironmentConfig `json:"PRODUCTION"`
-	Development RedisEnvironmentConfig `json:"DEVELOPMENT"`
+	Config RedisEnvironmentConfig `json:"CONFIG"`
 }
 
 type RedisEnvironmentConfig struct {
+	Environment   string `json:"Environment"`
 	ClientAddress string `json:"RedisClientAddress"`
 	Password      string `json:"RedisClientPassword"`
 	DB            int    `json:"RedisDB"`
 }
 
 func GetRedisConfig(environment string) RedisEnvironmentConfig {
-	redisConfig := readRedisConfigFromFile()
+	var fileName string
 	switch environment {
 	case constants.PRODUCTION:
-		return redisConfig.Production
+		fileName = "./config/redisProductionConfig.json"
 	case constants.DEVELOPMENT:
-		return redisConfig.Development
+		fileName = "./config/redisDevelopmentConfig.json"
 	default:
-		return redisConfig.Development
+		fileName = "./config/redisDevelopmentConfig.json"
 	}
+	redisConfig := readRedisConfigFromFile(fileName)
+	return redisConfig.Config
 }
 
-func readRedisConfigFromFile() RedisConfig {
-	configJson, err := os.ReadFile("./config/redisConfig.json")
+func readRedisConfigFromFile(fileName string) RedisConfig {
+	configJson, err := os.ReadFile(fileName)
 	if err != nil {
 		log.Fatal("Error when opening file: ", err)
 	}

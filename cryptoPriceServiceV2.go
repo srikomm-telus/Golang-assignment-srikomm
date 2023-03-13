@@ -9,71 +9,76 @@ import (
 )
 
 type CryptoPriceServiceV2 struct {
-	downstreamClient client.CryptoClientInterface
-	storageClient    store.CryptoStorageInterface
+	coinDeskClient    client.CoinDeskClientInterface
+	cryptonatorClient client.CryptonatorClientInterface
+	storageClient     store.CryptoStorageInterface
 }
 
-func NewCryptoPriceServiceV2(storageClient store.CryptoStorageInterface) *CryptoPriceServiceV2 {
+func NewCryptoPriceServiceV2(coinDeskClient client.CoinDeskClientInterface,
+	cryptonatorClient client.CryptonatorClientInterface, redisClient *store.RedisClient) *CryptoPriceServiceV2 {
 	return &CryptoPriceServiceV2{
-		storageClient: storageClient,
+		coinDeskClient:    coinDeskClient,
+		cryptonatorClient: cryptonatorClient,
+		storageClient: store.CryptoCacheStorage{
+			CacheClient: redisClient,
+		},
 	}
 }
 
-func NewCryptoPriceServiceV2ForTest(downstreamClient client.CryptoClientInterface, storageClient store.CryptoStorageInterface) *CryptoPriceServiceV2 {
+func NewCryptoPriceServiceV2ForTest(coinDeskClient client.CoinDeskClientInterface,
+	cryptonatorClient client.CryptonatorClientInterface, storageClient store.CryptoStorageInterface) *CryptoPriceServiceV2 {
 	return &CryptoPriceServiceV2{
-		downstreamClient: downstreamClient,
-		storageClient:    storageClient,
+		coinDeskClient:    coinDeskClient,
+		cryptonatorClient: cryptonatorClient,
+		storageClient:     storageClient,
 	}
 }
 
-func (cps *CryptoPriceServiceV2) GetCryptoPrice(cryptoName string, ctx context.Context) (*models.CryptoPriceServiceResponse, error) {
-	storedCryptoPrice, err := cps.cryptoPriceFromCache(cryptoName, ctx)
+func (cps *CryptoPriceServiceV2) GetCryptoPrice(ctx context.Context, cryptoName string) (models.CryptoPriceServiceResponse, error) {
+	storedCryptoPrice, err := cps.cryptoPriceFromCache(ctx, cryptoName)
 	if err == nil {
 		return storedCryptoPrice, err
 	} else {
 		logger.Info(err.Error())
 	}
-	if ctx.Value(constants.ENVIRONMENT) != constants.TEST {
-		cps.setDownstreamClient(cryptoName)
-	}
-	cryptoLivePrice, err := cps.cryptoPriceFromDownstream()
+	cryptoLivePrice, err := cps.cryptoPriceFromDownstream(cryptoName)
 	if err != nil {
-		return nil, err
+		return models.CryptoPriceServiceResponse{}, err
 	}
-	cps.updatePriceInCache(*cryptoLivePrice, ctx)
+	cps.updatePriceInCache(ctx, cryptoLivePrice)
 	return cryptoLivePrice, nil
 }
 
-func (cps *CryptoPriceServiceV2) cryptoPriceFromDownstream() (*models.CryptoPriceServiceResponse, error) {
-	cryptoPrice, err := cps.downstreamClient.GetCurrentPrice()
+func (cps *CryptoPriceServiceV2) cryptoPriceFromDownstream(cryptoName string) (models.CryptoPriceServiceResponse, error) {
+	var cryptoPrice models.Crypto
+	var err error
+	switch cryptoName {
+	case constants.BITCOIN_IDENTIFIER:
+		cryptoPrice, err = cps.coinDeskClient.GetBTCCurrentPrice()
+	case constants.ETHEREUM_IDENTIFIER:
+		cryptoPrice, err = cps.cryptonatorClient.GetETHCurrentPrice()
+	default:
+		cryptoPrice, err = cps.coinDeskClient.GetBTCCurrentPrice()
+	}
 	if err != nil {
-		return nil, err
+		return models.CryptoPriceServiceResponse{}, err
 	}
 	cryptoPriceConverted := cryptoPriceToAPIResponse(cryptoPrice)
-	return &cryptoPriceConverted, nil
+	return cryptoPriceConverted, nil
 }
 
-func (cps *CryptoPriceServiceV2) cryptoPriceFromCache(cryptoName string, ctx context.Context) (*models.CryptoPriceServiceResponse, error) {
-	crypto, err := cps.storageClient.GetCryptoPrice(cryptoName, ctx)
+func (cps *CryptoPriceServiceV2) cryptoPriceFromCache(ctx context.Context, cryptoName string) (models.CryptoPriceServiceResponse, error) {
+	crypto, err := cps.storageClient.GetCryptoPrice(ctx, cryptoName)
 	if err != nil {
-		return nil, err
+		return models.CryptoPriceServiceResponse{}, err
 	}
 	return newCryptoPriceServiceResponse(crypto), nil
 }
 
-func (cps *CryptoPriceServiceV2) updatePriceInCache(cpsr models.CryptoPriceServiceResponse, ctx context.Context) {
-	_, err := cps.storageClient.SetCryptoPrice(cryptoFromCryptoPriceServiceResponse(cpsr), ctx)
+func (cps *CryptoPriceServiceV2) updatePriceInCache(ctx context.Context, cpsr models.CryptoPriceServiceResponse) {
+	err := cps.storageClient.SetCryptoPrice(ctx, cryptoFromCryptoPriceServiceResponse(cpsr))
 	if err != nil {
 		logger.Error(err.Error())
 		return
-	}
-}
-
-func (cps *CryptoPriceServiceV2) setDownstreamClient(cryptoName string) {
-	switch cryptoName {
-	case constants.BITCOIN_IDENTIFIER:
-		cps.downstreamClient = client.NewCoinDeskClient(constants.COINDESK_ENDPOINT)
-	case constants.ETHEREUM_IDENTIFIER:
-		cps.downstreamClient = client.NewCryptonatorClient(constants.CRYPTONATOR_ENDPOINT)
 	}
 }

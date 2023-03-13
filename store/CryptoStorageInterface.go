@@ -6,6 +6,6 @@ import (
 )
 
 type CryptoStorageInterface interface {
-	SetCryptoPrice(crypto models.Crypto, ctx context.Context) (bool, error)
-	GetCryptoPrice(cryptoIdentifier string, ctx context.Context) (models.Crypto, error)
+	SetCryptoPrice(ctx context.Context, crypto models.Crypto) error
+	GetCryptoPrice(ctx context.Context, cryptoIdentifier string) (models.Crypto, error)
 }

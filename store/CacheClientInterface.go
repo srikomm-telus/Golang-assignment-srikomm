@@ -6,6 +6,6 @@ import (
 )
 
 type CacheClientInterface interface {
-	GetValue(key string, ctx context.Context) (string, error)
-	SetValue(key string, ctx context.Context, val interface{}, expiry time.Duration) error
+	GetValue(ctx context.Context, key string) (string, error)
+	SetValue(ctx context.Context, key string, val interface{}, expiry time.Duration) error
 }

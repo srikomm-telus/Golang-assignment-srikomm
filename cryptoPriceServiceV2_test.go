@@ -15,99 +15,183 @@ import (
 func TestCryptoPriceServiceV2_GetCryptoPrice(t *testing.T) {
 
 	ctx := context.Background()
-	ctx = context.WithValue(ctx, constants.ENVIRONMENT, constants.TEST)
 
 	t.Run("price is successfully fetched from cache", func(t *testing.T) {
 		mockCtrl := gomock.NewController(t)
 		mockCryptoStorageInterface := mockstore.NewMockCryptoStorageInterface(mockCtrl)
-		mockCryptoClientInterface := mockclient.NewMockCryptoClientInterface(mockCtrl)
-		mockCryptoPriceService := NewCryptoPriceServiceV2ForTest(mockCryptoClientInterface, mockCryptoStorageInterface)
+		mockCoinDeskClient := mockclient.NewMockCoinDeskClientInterface(mockCtrl)
+		mockCryptonatorClient := mockclient.NewMockCryptonatorClientInterface(mockCtrl)
+		mockCryptoPriceService := NewCryptoPriceServiceV2ForTest(mockCoinDeskClient, mockCryptonatorClient, mockCryptoStorageInterface)
 		mockCryptoPrice := map[string]string{
 			"USD": "30",
 			"EUR": "40",
 		}
-
 		response := &models.CryptoPriceServiceResponse{
 			IsFromCache: true,
 			CryptoName:  constants.BITCOIN_IDENTIFIER,
 			Data:        mockCryptoPrice,
 		}
-		mockCryptoStorageInterface.EXPECT().GetCryptoPrice(constants.BITCOIN_IDENTIFIER, ctx).Times(1).Return(
+		mockCryptoStorageInterface.EXPECT().GetCryptoPrice(ctx, constants.BITCOIN_IDENTIFIER).Times(1).Return(
 			models.NewCrypto(constants.BITCOIN_IDENTIFIER, mockCryptoPrice), nil)
-		mockCryptoClientInterface.EXPECT().GetCurrentPrice().Times(0)
 		mockCryptoStorageInterface.EXPECT().SetCryptoPrice(gomock.Any(), gomock.Any()).Times(0)
+		mockCoinDeskClient.EXPECT().GetBTCCurrentPrice().Times(0)
+		mockCryptonatorClient.EXPECT().GetETHCurrentPrice().Times(0)
 
-		got, err := mockCryptoPriceService.GetCryptoPrice(constants.BITCOIN_IDENTIFIER, ctx)
+		got, err := mockCryptoPriceService.GetCryptoPrice(ctx, constants.BITCOIN_IDENTIFIER)
 		assert.Equal(t, response, got)
 		assert.Equal(t, nil, err)
 	})
 
-	t.Run("price is successfully fetched from downstream client", func(t *testing.T) {
+	t.Run("BTC price is successfully fetched from downstream coinDeskClient", func(t *testing.T) {
 		mockCtrl := gomock.NewController(t)
 		mockCryptoStorageInterface := mockstore.NewMockCryptoStorageInterface(mockCtrl)
-		mockCryptoClientInterface := mockclient.NewMockCryptoClientInterface(mockCtrl)
-		mockCryptoPriceService := NewCryptoPriceServiceV2ForTest(mockCryptoClientInterface, mockCryptoStorageInterface)
+		mockCoinDeskClient := mockclient.NewMockCoinDeskClientInterface(mockCtrl)
+		mockCryptonatorClient := mockclient.NewMockCryptonatorClientInterface(mockCtrl)
+		mockCryptoPriceService := NewCryptoPriceServiceV2ForTest(mockCoinDeskClient, mockCryptonatorClient, mockCryptoStorageInterface)
 		mockCryptoPrice := map[string]string{
 			"USD": "30",
 			"EUR": "40",
 		}
+		mockCrypto := models.NewCrypto(constants.BITCOIN_IDENTIFIER, mockCryptoPrice)
 
 		response := &models.CryptoPriceServiceResponse{
 			IsFromCache: false,
 			CryptoName:  constants.BITCOIN_IDENTIFIER,
 			Data:        mockCryptoPrice,
 		}
-		mockCryptoStorageInterface.EXPECT().GetCryptoPrice(constants.BITCOIN_IDENTIFIER, ctx).Times(1).Return(
+		mockCryptoStorageInterface.EXPECT().GetCryptoPrice(ctx, constants.BITCOIN_IDENTIFIER).Times(1).Return(
 			models.Crypto{}, fmt.Errorf("intentional error"))
-		mockCryptoClientInterface.EXPECT().GetCurrentPrice().Times(1).Return(
-			models.NewCrypto(constants.BITCOIN_IDENTIFIER, mockCryptoPrice), nil)
-		mockCryptoStorageInterface.EXPECT().SetCryptoPrice(gomock.Any(), ctx).Times(1).Return(true, nil)
+		mockCoinDeskClient.EXPECT().GetBTCCurrentPrice().Times(1).Return(mockCrypto, nil)
+		mockCryptoStorageInterface.EXPECT().SetCryptoPrice(ctx, mockCrypto).Times(1).Return(nil)
+		mockCryptonatorClient.EXPECT().GetETHCurrentPrice().Times(0)
 
-		got, err := mockCryptoPriceService.GetCryptoPrice(constants.BITCOIN_IDENTIFIER, ctx)
+		got, err := mockCryptoPriceService.GetCryptoPrice(ctx, constants.BITCOIN_IDENTIFIER)
 		assert.Equal(t, response, got)
 		assert.Equal(t, nil, err)
 	})
 
-	t.Run("both storage and downstream layers throws errors", func(t *testing.T) {
+	t.Run("failed to fetch BTC price as no cache & downstream coinDeskClient throws error", func(t *testing.T) {
 		mockCtrl := gomock.NewController(t)
 		mockCryptoStorageInterface := mockstore.NewMockCryptoStorageInterface(mockCtrl)
-		mockCryptoClientInterface := mockclient.NewMockCryptoClientInterface(mockCtrl)
-		mockCryptoPriceService := NewCryptoPriceServiceV2ForTest(mockCryptoClientInterface, mockCryptoStorageInterface)
-		mockCryptoStorageInterface.EXPECT().GetCryptoPrice(constants.BITCOIN_IDENTIFIER, ctx).Times(1).Return(
-			models.Crypto{}, fmt.Errorf("intentional error"))
-		mockCryptoClientInterface.EXPECT().GetCurrentPrice().Times(1).Return(
-			models.Crypto{}, fmt.Errorf("intentional error"))
-		mockCryptoStorageInterface.EXPECT().SetCryptoPrice(gomock.Any(), ctx).Times(0)
+		mockCoinDeskClient := mockclient.NewMockCoinDeskClientInterface(mockCtrl)
+		mockCryptonatorClient := mockclient.NewMockCryptonatorClientInterface(mockCtrl)
+		mockCryptoPriceService := NewCryptoPriceServiceV2ForTest(mockCoinDeskClient, mockCryptonatorClient, mockCryptoStorageInterface)
 
-		got, err := mockCryptoPriceService.GetCryptoPrice(constants.BITCOIN_IDENTIFIER, ctx)
-		assert.Equal(t, nil, got)
+		mockCryptoStorageInterface.EXPECT().GetCryptoPrice(ctx, constants.BITCOIN_IDENTIFIER).Times(1).Return(
+			models.Crypto{}, fmt.Errorf("intentional error"))
+		mockCoinDeskClient.EXPECT().GetBTCCurrentPrice().Times(1).Return(
+			models.Crypto{}, fmt.Errorf("intentional error"))
+		mockCryptoStorageInterface.EXPECT().SetCryptoPrice(gomock.Any(), gomock.Any()).Times(0)
+		mockCryptonatorClient.EXPECT().GetETHCurrentPrice().Times(0)
+
+		got, err := mockCryptoPriceService.GetCryptoPrice(ctx, constants.BITCOIN_IDENTIFIER)
+		assert.Equal(t, models.CryptoPriceServiceResponse{}, got)
 		assert.Equal(t, fmt.Errorf("intentional error"), err)
 	})
 
-	t.Run("price is not set in cache, downstream call succeeds but setting price in cache fails", func(t *testing.T) {
+	t.Run("BTC price is successfully fetched from downstream coinDeskClient, but setting price in cache fails", func(t *testing.T) {
 		mockCtrl := gomock.NewController(t)
 		mockCryptoStorageInterface := mockstore.NewMockCryptoStorageInterface(mockCtrl)
-		mockCryptoClientInterface := mockclient.NewMockCryptoClientInterface(mockCtrl)
-		mockCryptoPriceService := NewCryptoPriceServiceV2ForTest(mockCryptoClientInterface, mockCryptoStorageInterface)
+		mockCoinDeskClient := mockclient.NewMockCoinDeskClientInterface(mockCtrl)
+		mockCryptonatorClient := mockclient.NewMockCryptonatorClientInterface(mockCtrl)
+		mockCryptoPriceService := NewCryptoPriceServiceV2ForTest(mockCoinDeskClient, mockCryptonatorClient, mockCryptoStorageInterface)
 		mockCryptoPrice := map[string]string{
 			"USD": "30",
 			"EUR": "40",
 		}
+		mockCrypto := models.NewCrypto(constants.BITCOIN_IDENTIFIER, mockCryptoPrice)
 
 		response := &models.CryptoPriceServiceResponse{
 			IsFromCache: false,
 			CryptoName:  constants.BITCOIN_IDENTIFIER,
 			Data:        mockCryptoPrice,
 		}
-		mockCryptoStorageInterface.EXPECT().GetCryptoPrice(constants.BITCOIN_IDENTIFIER, ctx).Times(1).Return(
+		mockCryptoStorageInterface.EXPECT().GetCryptoPrice(ctx, constants.BITCOIN_IDENTIFIER).Times(1).Return(
 			models.Crypto{}, fmt.Errorf("intentional error"))
-		mockCryptoClientInterface.EXPECT().GetCurrentPrice().Times(1).Return(
-			models.NewCrypto(constants.BITCOIN_IDENTIFIER, mockCryptoPrice), nil)
-		mockCryptoStorageInterface.EXPECT().SetCryptoPrice(gomock.Any(), gomock.Any()).Times(1).Return(false,
+		mockCoinDeskClient.EXPECT().GetBTCCurrentPrice().Times(1).Return(mockCrypto, nil)
+		mockCryptoStorageInterface.EXPECT().SetCryptoPrice(ctx, mockCrypto).Times(1).Return(
 			fmt.Errorf("intentional error"))
+		mockCryptonatorClient.EXPECT().GetETHCurrentPrice().Times(0)
 
-		got, err := mockCryptoPriceService.GetCryptoPrice(constants.BITCOIN_IDENTIFIER, ctx)
+		got, err := mockCryptoPriceService.GetCryptoPrice(ctx, constants.BITCOIN_IDENTIFIER)
 		assert.Equal(t, response, got)
 		assert.Equal(t, nil, err)
 	})
+
+	t.Run("ETH price is successfully fetched from downstream cryptonatorClient", func(t *testing.T) {
+		mockCtrl := gomock.NewController(t)
+		mockCryptoStorageInterface := mockstore.NewMockCryptoStorageInterface(mockCtrl)
+		mockCoinDeskClient := mockclient.NewMockCoinDeskClientInterface(mockCtrl)
+		mockCryptonatorClient := mockclient.NewMockCryptonatorClientInterface(mockCtrl)
+		mockCryptoPriceService := NewCryptoPriceServiceV2ForTest(mockCoinDeskClient, mockCryptonatorClient, mockCryptoStorageInterface)
+		mockCryptoPrice := map[string]string{
+			"USD": "30",
+			"EUR": "40",
+		}
+		mockCrypto := models.NewCrypto(constants.ETHEREUM_IDENTIFIER, mockCryptoPrice)
+
+		response := &models.CryptoPriceServiceResponse{
+			IsFromCache: false,
+			CryptoName:  constants.ETHEREUM_IDENTIFIER,
+			Data:        mockCryptoPrice,
+		}
+		mockCryptoStorageInterface.EXPECT().GetCryptoPrice(ctx, constants.ETHEREUM_IDENTIFIER).Times(1).Return(
+			models.Crypto{}, fmt.Errorf("intentional error"))
+		mockCryptonatorClient.EXPECT().GetETHCurrentPrice().Times(1).Return(mockCrypto, nil)
+		mockCryptoStorageInterface.EXPECT().SetCryptoPrice(ctx, mockCrypto).Times(1).Return(nil)
+		mockCoinDeskClient.EXPECT().GetBTCCurrentPrice().Times(0)
+
+		got, err := mockCryptoPriceService.GetCryptoPrice(ctx, constants.ETHEREUM_IDENTIFIER)
+		assert.Equal(t, response, got)
+		assert.Equal(t, nil, err)
+	})
+
+	t.Run("failed to fetch ETH price as no cache & downstream cryptonatorClient throws error", func(t *testing.T) {
+		mockCtrl := gomock.NewController(t)
+		mockCryptoStorageInterface := mockstore.NewMockCryptoStorageInterface(mockCtrl)
+		mockCoinDeskClient := mockclient.NewMockCoinDeskClientInterface(mockCtrl)
+		mockCryptonatorClient := mockclient.NewMockCryptonatorClientInterface(mockCtrl)
+		mockCryptoPriceService := NewCryptoPriceServiceV2ForTest(mockCoinDeskClient, mockCryptonatorClient, mockCryptoStorageInterface)
+
+		mockCryptoStorageInterface.EXPECT().GetCryptoPrice(ctx, constants.ETHEREUM_IDENTIFIER).Times(1).Return(
+			models.Crypto{}, fmt.Errorf("intentional error"))
+		mockCryptonatorClient.EXPECT().GetETHCurrentPrice().Times(1).Return(
+			models.Crypto{}, fmt.Errorf("intentional error"))
+		mockCryptoStorageInterface.EXPECT().SetCryptoPrice(gomock.Any(), gomock.Any()).Times(0)
+		mockCoinDeskClient.EXPECT().GetBTCCurrentPrice().Times(0)
+
+		got, err := mockCryptoPriceService.GetCryptoPrice(ctx, constants.ETHEREUM_IDENTIFIER)
+		assert.Equal(t, models.CryptoPriceServiceResponse{}, got)
+		assert.Equal(t, fmt.Errorf("intentional error"), err)
+	})
+
+	t.Run("ETH price is successfully fetched from downstream cryptonatorClient, but setting price in cache fails", func(t *testing.T) {
+		mockCtrl := gomock.NewController(t)
+		mockCryptoStorageInterface := mockstore.NewMockCryptoStorageInterface(mockCtrl)
+		mockCoinDeskClient := mockclient.NewMockCoinDeskClientInterface(mockCtrl)
+		mockCryptonatorClient := mockclient.NewMockCryptonatorClientInterface(mockCtrl)
+		mockCryptoPriceService := NewCryptoPriceServiceV2ForTest(mockCoinDeskClient, mockCryptonatorClient, mockCryptoStorageInterface)
+		mockCryptoPrice := map[string]string{
+			"USD": "30",
+			"EUR": "40",
+		}
+		mockCrypto := models.NewCrypto(constants.ETHEREUM_IDENTIFIER, mockCryptoPrice)
+
+		response := &models.CryptoPriceServiceResponse{
+			IsFromCache: false,
+			CryptoName:  constants.ETHEREUM_IDENTIFIER,
+			Data:        mockCryptoPrice,
+		}
+		mockCryptoStorageInterface.EXPECT().GetCryptoPrice(ctx, constants.ETHEREUM_IDENTIFIER).Times(1).Return(
+			models.Crypto{}, fmt.Errorf("intentional error"))
+		mockCryptonatorClient.EXPECT().GetETHCurrentPrice().Times(1).Return(mockCrypto, nil)
+		mockCryptoStorageInterface.EXPECT().SetCryptoPrice(ctx, mockCrypto).Times(1).Return(
+			fmt.Errorf("intentional error"))
+		mockCoinDeskClient.EXPECT().GetBTCCurrentPrice().Times(0)
+
+		got, err := mockCryptoPriceService.GetCryptoPrice(ctx, constants.ETHEREUM_IDENTIFIER)
+		assert.Equal(t, response, got)
+		assert.Equal(t, nil, err)
+	})
+
 }
