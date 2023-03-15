@@ -58,7 +58,7 @@ func (cps *CryptoPriceServiceV2) cryptoPriceFromDownstream(cryptoName string) (m
 	case constants.ETHEREUM_IDENTIFIER:
 		cryptoPrice, err = cps.cryptonatorClient.GetETHCurrentPrice()
 	default:
-		cryptoPrice, err = cps.coinDeskClient.GetBTCCurrentPrice()
+		return models.CryptoPriceServiceResponse{}, err
 	}
 	if err != nil {
 		return models.CryptoPriceServiceResponse{}, err
