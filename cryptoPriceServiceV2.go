@@ -6,6 +6,7 @@ import (
 	"Golang-assignment-srikomm/models"
 	"Golang-assignment-srikomm/store"
 	"context"
+	"fmt"
 )
 
 type CryptoPriceServiceV2 struct {
@@ -58,7 +59,7 @@ func (cps *CryptoPriceServiceV2) cryptoPriceFromDownstream(cryptoName string) (m
 	case constants.ETHEREUM_IDENTIFIER:
 		cryptoPrice, err = cps.cryptonatorClient.GetETHCurrentPrice()
 	default:
-		return models.CryptoPriceServiceResponse{}, err
+		return models.CryptoPriceServiceResponse{}, fmt.Errorf("invalid crypto type")
 	}
 	if err != nil {
 		return models.CryptoPriceServiceResponse{}, err
